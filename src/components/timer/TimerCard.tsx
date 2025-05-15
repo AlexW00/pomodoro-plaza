@@ -80,77 +80,93 @@ export function TimerCard({ timer }: TimerCardProps) {
     }
   }, [isEditingTimerValue]);
 
-  // Handle saving title on blur or Enter key
-  const handleTitleBlur = () => {
-    if (titleValue !== timer.title) {
-      updateTimer({ ...timer, title: titleValue });
-    }
-    setIsEditingTitle(false);
-  };
-
-  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      titleInputRef.current?.blur();
-    }
-  };
-
-  // Handle saving daily limit on blur or Enter key
-  const handleDailyLimitBlur = () => {
-    const newValue = parseInt(dailyLimitValue, 10);
-    if (!isNaN(newValue) && newValue > 0 && newValue <= 10 && newValue !== timer.dailyLimit) {
-      updateTimer({ ...timer, dailyLimit: newValue });
+  // Reusable handler for input blur
+  const handleInputBlur = <T,>(currentValue: string, initialValue: T, updateFn: (newValue: T) => void, parseFn: (value: string) => T | undefined, revertFn: () => void) => {
+    const parsedValue = parseFn(currentValue);
+    if (parsedValue !== undefined && parsedValue !== initialValue) {
+      updateFn(parsedValue);
     } else {
-      setDailyLimitValue(timer.dailyLimit.toString());
+      revertFn();
     }
-    setIsEditingDailyLimit(false);
   };
 
-  const handleDailyLimitKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  // Reusable handler for input key down
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, ref: React.RefObject<HTMLInputElement>, revertFn?: () => void) => {
     if (e.key === 'Enter') {
-      dailyLimitInputRef.current?.blur();
+      ref.current?.blur();
+    } else if (e.key === 'Escape') {
+      revertFn?.();
+      ref.current?.blur();
     }
   };
 
-  // Handle saving main timer value on blur or Enter key
-  const handleTimerValueBlur = () => {
-    const parts = timerValue.split(':');
-    let newDurationMinutes = timer.durationMinutes;
-
+  // Parsing and validation for timer value input
+  const parseTimerValue = (value: string): number | undefined => {
+    const parts = value.split(':');
     if (parts.length === 2) {
       const minutes = parseInt(parts[0], 10);
       const seconds = parseInt(parts[1], 10);
       if (!isNaN(minutes) && !isNaN(seconds) && seconds >= 0 && seconds < 60) {
-        newDurationMinutes = minutes + (seconds > 0 ? 1 : 0);
-      } else {
-         const minutesOnly = parseInt(timerValue, 10);
-         if (!isNaN(minutesOnly) && minutesOnly > 0 && minutesOnly <= 9999) {
-           newDurationMinutes = minutesOnly;
-         }
+        return minutes + (seconds > 0 ? 1 : 0);
       }
     } else {
-      const minutesOnly = parseInt(timerValue, 10);
+      const minutesOnly = parseInt(value, 10);
       if (!isNaN(minutesOnly) && minutesOnly > 0 && minutesOnly <= 9999) {
-        newDurationMinutes = minutesOnly;
+        return minutesOnly;
       }
     }
+    return undefined; // Indicate invalid input
+  };
 
-    // Validate and update if changed and valid
-    if (newDurationMinutes > 0 && newDurationMinutes <= 9999 && newDurationMinutes !== timer.durationMinutes) {
-       updateTimer({ ...timer, durationMinutes: newDurationMinutes });
-    } else { // Revert if invalid or no change
-      setTimerValue(formatTime(timer.durationMinutes * 60)); // Only reset if invalid or no change
-    }
+  // Handle saving title on blur or Enter key
+  const handleTitleBlur = () => {
+    handleInputBlur(
+      titleValue,
+      timer.title,
+      (newValue) => updateTimer({ ...timer, title: newValue }),
+      (value) => value.trim() !== '' ? value.trim() : undefined,
+      () => setTitleValue(timer.title)
+    );
+    setIsEditingTitle(false);
+  };
 
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    handleInputKeyDown(e, titleInputRef, () => setTitleValue(timer.title));
+  };
+
+  // Handle saving daily limit on blur or Enter key
+  const handleDailyLimitBlur = () => {
+    handleInputBlur(
+      dailyLimitValue,
+      timer.dailyLimit,
+      (newValue) => updateTimer({ ...timer, dailyLimit: newValue }),
+      (value) => {
+        const parsed = parseInt(value, 10);
+        return !isNaN(parsed) && parsed > 0 && parsed <= 10 ? parsed : undefined;
+      },
+      () => setDailyLimitValue(timer.dailyLimit.toString())
+    );
+    setIsEditingDailyLimit(false);
+  };
+
+  const handleDailyLimitKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    handleInputKeyDown(e, dailyLimitInputRef, () => setDailyLimitValue(timer.dailyLimit.toString()));
+  };
+
+  // Handle saving main timer value on blur or Enter key
+  const handleTimerValueBlur = () => {
+    handleInputBlur(
+      timerValue,
+      timer.durationMinutes,
+      (newValue) => updateTimer({ ...timer, durationMinutes: newValue }),
+      parseTimerValue,
+      () => setTimerValue(formatTime(timer.durationMinutes * 60))
+    );
     setIsEditingTimerValue(false);
   };
 
   const handleTimerValueKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      timerValueInputRef.current?.blur();
-    } else if (e.key === 'Escape') {
-      setTimerValue(formatTime(timer.durationMinutes * 60));
-      setIsEditingTimerValue(false);
-    }
+    handleInputKeyDown(e, timerValueInputRef, () => setTimerValue(formatTime(timer.durationMinutes * 60)));
   };
 
   const handleStartPause = () => {
