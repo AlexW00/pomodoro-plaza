@@ -47,6 +47,7 @@ interface TimerContextType {
   timeUntilReset: () => string;
   updateGlobalPauseDuration: (minutes: number) => void;
   stopBreakTimer: () => void;
+  startBreakCountdown: () => void;
   resetTimer: (id: string) => void;
 }
 
@@ -402,6 +403,21 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const startBreakCountdown = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      breakTimer: {
+        isActive: true,
+        timeRemaining: prev.globalPauseDurationMinutes * 60,
+        completedTimerId: prev.activeTimer?.id ?? null,
+      }
+    }));
+    toast({
+      title: "Break started",
+      description: "Time to relax.",
+    });
+  }, []);
+
   const resetTimer = useCallback((id: string) => {
     setState(prev => {
       return {
@@ -433,6 +449,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       timeUntilReset,
       updateGlobalPauseDuration,
       stopBreakTimer,
+      startBreakCountdown,
       resetTimer,
     }}>
       {children}
