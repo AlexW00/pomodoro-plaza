@@ -1,33 +1,29 @@
+import { Button } from '@/components/ui/button';
+import {
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
+import { TIMER_COLORS, useTimerContext } from '@/contexts/TimerContext';
+import { useToast } from '@/hooks/use-toast';
+import { TimerData } from '@/types/timer';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useTimerContext, TIMER_COLORS } from '@/contexts/TimerContext';
-import { TimerData, TimerPriority } from '@/types/timer';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Slider } from '@/components/ui/slider';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { useToast } from '@/hooks/use-toast';
-import { Trash2Icon } from 'lucide-react';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required').max(50, 'Title is too long'),
-  description: z.string().max(200, 'Description is too long').optional(),
   durationMinutes: z.number().min(1).max(120),
   dailyLimit: z.number().min(1).max(10),
   color: z.string(),
-  priority: z.enum(['low', 'medium', 'high']).optional(),
 });
 
 interface TimerFormProps {
@@ -46,11 +42,9 @@ export function TimerForm({ timer, onClose }: TimerFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: timer?.title || '',
-      description: timer?.description || '',
       durationMinutes: timer?.durationMinutes || 25,
       dailyLimit: timer?.dailyLimit || 4,
       color: timer?.color || TIMER_COLORS[0],
-      priority: timer?.priority || 'medium',
     },
   });
   
@@ -91,29 +85,12 @@ export function TimerForm({ timer, onClose }: TimerFormProps) {
     }
   };
   
-  const priorities: { value: TimerPriority; label: string }[] = [
-    { value: 'low', label: 'Low' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'high', label: 'High' },
-  ];
-  
   return (
-    <div>
+    <div className="">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">
           {timer ? 'Edit Timer' : 'Create New Timer'}
         </h2>
-        {timer && (
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleDelete}
-            className="flex items-center gap-2"
-          >
-            <Trash2Icon className="h-4 w-4" />
-            Delete
-          </Button>
-        )}
       </div>
       
       <Form {...form}>
@@ -126,24 +103,6 @@ export function TimerForm({ timer, onClose }: TimerFormProps) {
                 <FormLabel>Title</FormLabel>
                 <FormControl>
                   <Input {...field} placeholder="e.g., Deep Work" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description (optional)</FormLabel>
-                <FormControl>
-                  <Textarea
-                    {...field}
-                    placeholder="Add a short description..."
-                    rows={2}
-                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -228,42 +187,26 @@ export function TimerForm({ timer, onClose }: TimerFormProps) {
             )}
           />
           
-          <FormField
-            control={form.control}
-            name="priority"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Priority (optional)</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="flex space-x-4"
-                  >
-                    {priorities.map((priority) => (
-                      <FormItem key={priority.value} className="flex items-center space-x-2">
-                        <FormControl>
-                          <RadioGroupItem value={priority.value} />
-                        </FormControl>
-                        <FormLabel className="font-normal cursor-pointer">
-                          {priority.label}
-                        </FormLabel>
-                      </FormItem>
-                    ))}
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} className="text-white">
+          <div className="flex justify-between items-center gap-6 pt-2">
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">
-              {timer ? 'Update Timer' : 'Create Timer'}
-            </Button>
+            <div className="flex gap-6">
+              {timer && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2Icon className="h-4 w-4" />
+                  Delete
+                </Button>
+              )}
+              <Button type="submit" className={`${timer ? 'text-white' : 'bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200'}`}>
+                {timer ? 'Update Timer' : 'Create Timer'}
+              </Button>
+            </div>
           </div>
         </form>
       </Form>

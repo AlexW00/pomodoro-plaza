@@ -1,18 +1,18 @@
-import { useTimerContext } from '@/contexts/TimerContext';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { useTimerContext } from '@/contexts/TimerContext';
 import { formatTime } from '@/utils/commonUtils';
-import { BREAK_DURATION_MINUTES } from '@/contexts/TimerContext';
 import { CoffeeIcon } from 'lucide-react';
 
 export function TimerBreak() {
-  const { state } = useTimerContext();
+  const { state, stopBreakTimer } = useTimerContext();
   const { breakTimer } = state;
   
   // Only render when break is active
   if (!breakTimer.isActive) return null;
   
   // Calculate progress
-  const totalBreakSeconds = BREAK_DURATION_MINUTES * 60;
+  const totalBreakSeconds = state.globalPauseDurationMinutes * 60;
   const progress = ((totalBreakSeconds - breakTimer.timeRemaining) / totalBreakSeconds) * 100;
   
   return (
@@ -33,9 +33,9 @@ export function TimerBreak() {
             {formatTime(breakTimer.timeRemaining)}
           </div>
           
-          <p className="text-sm text-muted-foreground">
-            You cannot start another timer until your break is complete
-          </p>
+          <Button onClick={stopBreakTimer} variant="outline">
+            Skip Break
+          </Button>
         </div>
       </div>
     </div>

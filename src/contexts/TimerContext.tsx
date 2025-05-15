@@ -1,15 +1,15 @@
-import { 
-  createContext, 
-  useContext, 
-  useState, 
-  useEffect, 
-  useCallback, 
-  ReactNode 
-} from 'react';
 import { toast } from '@/hooks/use-toast';
-import { TimerData, ActiveTimer, TimerBreak, TimerState } from '@/types/timer';
+import { TimerData, TimerState } from '@/types/timer';
 import { generateId } from '@/utils/commonUtils';
-import { compressState, decompressState, getFormattedDate } from '@/utils/stateUtils';
+import { getFormattedDate } from '@/utils/stateUtils';
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState
+} from 'react';
 
 // Default timer colors
 export const TIMER_COLORS = [
@@ -23,9 +23,6 @@ export const TIMER_COLORS = [
   '#00BCD4', // Cyan
 ];
 
-// Break duration in minutes
-export const BREAK_DURATION_MINUTES = 5;
-
 const defaultState: TimerState = {
   timers: [],
   activeTimer: null,
@@ -34,7 +31,8 @@ const defaultState: TimerState = {
     timeRemaining: 0,
     completedTimerId: null
   },
-  lastResetDay: getFormattedDate(new Date())
+  lastResetDay: getFormattedDate(new Date()),
+  globalPauseDurationMinutes: 5,
 };
 
 interface TimerContextType {
@@ -46,8 +44,10 @@ interface TimerContextType {
   pauseTimer: (id: string) => void;
   stopTimer: () => void;
   updateTimerPositions: (timers: TimerData[]) => void;
-  getShareableLink: () => string;
   timeUntilReset: () => string;
+  updateGlobalPauseDuration: (minutes: number) => void;
+  stopBreakTimer: () => void;
+  resetTimer: (id: string) => void;
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
@@ -55,27 +55,18 @@ const TimerContext = createContext<TimerContextType | undefined>(undefined);
 export function TimerProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<TimerState>(() => {
     try {
-      // Check URL for compressed state
-      const urlParams = new URLSearchParams(window.location.search);
-      const compressed = urlParams.get('state');
-      
-      if (compressed) {
-        const decompressed = decompressState(compressed);
-        if (decompressed) {
-          return decompressed;
-        }
-      }
-      
-      // Otherwise load from localStorage or use default state
+      // Load from localStorage or use default state
       const saved = localStorage.getItem('timerState');
-      return saved ? JSON.parse(saved) : defaultState;
+      const loadedState = saved ? JSON.parse(saved) : {};
+      // Merge loaded state with default state to ensure all fields are present
+      return { ...defaultState, ...loadedState };
     } catch (error) {
       console.error('Error loading state:', error);
       return defaultState;
     }
   });
 
-  // Update URL with compressed state when state changes
+  // Update localStorage when state changes
   useEffect(() => {
     try {
       localStorage.setItem('timerState', JSON.stringify(state));
@@ -134,7 +125,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
               activeTimer: null,
               breakTimer: {
                 isActive: true,
-                timeRemaining: BREAK_DURATION_MINUTES * 60,
+                timeRemaining: prev.globalPauseDurationMinutes * 60,
                 completedTimerId
               }
             };
@@ -186,7 +177,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     }, 1000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [state.globalPauseDurationMinutes]);
 
   const addTimer = useCallback((timerData: Omit<TimerData, 'id' | 'usedToday' | 'position'>) => {
     setState(prev => {
@@ -334,13 +325,6 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const getShareableLink = useCallback(() => {
-    const compressed = compressState(state);
-    const url = new URL(window.location.href);
-    url.searchParams.set('state', compressed);
-    return url.toString();
-  }, [state]);
-
   const timeUntilReset = useCallback(() => {
     const now = new Date();
     const tomorrow = new Date(now);
@@ -354,6 +338,46 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     return `${diffHrs}h ${diffMins}m`;
   }, []);
 
+  const updateGlobalPauseDuration = useCallback((minutes: number) => {
+    setState(prev => ({
+      ...prev,
+      globalPauseDurationMinutes: minutes
+    }));
+  }, []);
+
+  const stopBreakTimer = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      breakTimer: {
+        isActive: false,
+        timeRemaining: 0,
+        completedTimerId: null,
+      }
+    }));
+    toast({
+      title: "Break skipped",
+      description: "You have skipped your break.",
+    });
+  }, []);
+
+  const resetTimer = useCallback((id: string) => {
+    setState(prev => {
+      return {
+        ...prev,
+        timers: prev.timers.map(timer =>
+          timer.id === id ? { ...timer, usedToday: 0 } : timer
+        ),
+        // Optionally stop the timer if it's currently active or its break is active
+        activeTimer: prev.activeTimer?.id === id ? null : prev.activeTimer,
+        breakTimer: prev.breakTimer.completedTimerId === id ? { isActive: false, timeRemaining: 0, completedTimerId: null } : prev.breakTimer,
+      };
+    });
+    toast({
+      title: "Timer reset",
+      description: "The timer usage count has been reset.",
+    });
+  }, []);
+
   return (
     <TimerContext.Provider value={{
       state,
@@ -364,8 +388,10 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       pauseTimer,
       stopTimer,
       updateTimerPositions,
-      getShareableLink,
-      timeUntilReset
+      timeUntilReset,
+      updateGlobalPauseDuration,
+      stopBreakTimer,
+      resetTimer,
     }}>
       {children}
     </TimerContext.Provider>

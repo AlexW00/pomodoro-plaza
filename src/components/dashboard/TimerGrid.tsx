@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
 import { useTimerContext } from '@/contexts/TimerContext';
-import { TimerCard } from '../timer/TimerCard';
 import { TimerData } from '@/types/timer';
+import { useEffect, useState } from 'react';
 import { SortableItem, SortableList } from '../sortable/SortableList';
+import { TimerCard } from '../timer/TimerCard';
 
 export function TimerGrid() {
   const { state, updateTimerPositions } = useTimerContext();
