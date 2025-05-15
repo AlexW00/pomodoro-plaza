@@ -66,6 +66,23 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  // Function to request notification permission
+  const requestNotificationPermission = useCallback(() => {
+    if (!("Notification" in window)) {
+      console.error("This browser does not support desktop notification");
+      return Promise.resolve("denied"); // Return a denied-like state for unsupported browsers
+    }
+
+    return Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        console.log("Notification permission granted.");
+      } else {
+        console.warn("Notification permission denied.");
+      }
+      return permission; // Return the permission status
+    });
+  }, []);
+
   // Update localStorage when state changes
   useEffect(() => {
     try {
@@ -119,6 +136,14 @@ export function TimerProvider({ children }: { children: ReactNode }) {
               description: "Time for a break. Take 5 minutes to rest.",
             });
             
+            // Send push notification
+            if ("Notification" in window && Notification.permission === "granted") {
+              new Notification("Pomodoro Plaza", {
+                body: `Timer "${prev.timers.find(t => t.id === completedTimerId)?.title}" completed! Time for a break.`,
+                icon: "/favicon.png" // You might want to add a relevant icon
+              });
+            }
+
             return {
               ...prev,
               timers: updatedTimers,
@@ -151,6 +176,14 @@ export function TimerProvider({ children }: { children: ReactNode }) {
               title: "Break completed",
               description: "You can now start another timer.",
             });
+            
+            // Send push notification
+            if ("Notification" in window && Notification.permission === "granted") {
+              new Notification("Pomodoro Plaza", {
+                body: "Your break is over. Time to start a new timer!",
+                icon: "/favicon.png" // You might want to add a relevant icon
+              });
+            }
             
             return {
               ...prev,
@@ -227,7 +260,16 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const startTimer = useCallback((id: string) => {
+  const startTimer = useCallback(async (id: string) => {
+    // Request notification permission if it hasn't been granted or denied
+    if ("Notification" in window && Notification.permission === "default") {
+      const permission = await requestNotificationPermission();
+      // If permission is not granted after prompt, do not proceed with starting timer logic that depends on it
+      if (permission !== "granted" && permission !== "denied") { // Handle cases where the promise might not resolve to granted/denied immediately
+        return; // Stop if permission wasn't granted or denied (e.g., dismissed)
+      }
+    }
+
     setState(prev => {
       // Cannot start if a break is active
       if (prev.breakTimer.isActive) {
