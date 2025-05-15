@@ -33,6 +33,9 @@ export function TimerCard({ timer }: TimerCardProps) {
   );
   const timerValueInputRef = useRef<HTMLInputElement>(null);
   
+  // Add ref for the hidden color input
+  const colorInputRef = useRef<HTMLInputElement>(null);
+  
   // Determine if this timer is active
   const isActive = state.activeTimer?.id === timer.id;
   const isPaused = isActive && state.activeTimer?.isPaused;
@@ -176,6 +179,16 @@ export function TimerCard({ timer }: TimerCardProps) {
       startTimer(timer.id);
     }
   };
+
+  // Handle color change
+  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateTimer({ ...timer, color: e.target.value });
+  };
+  
+  // Trigger hidden color input click
+  const triggerColorPicker = () => {
+    colorInputRef.current?.click();
+  };
   
   return (
     <>
@@ -245,6 +258,21 @@ export function TimerCard({ timer }: TimerCardProps) {
                 )
               )}
             </Badge>
+
+            {/* Color Swatch and Hidden Input */}
+            <div
+              className="w-4 h-4 rounded-full cursor-pointer border border-gray-300 dark:border-gray-700"
+              style={{ backgroundColor: timer.color }}
+              onClick={triggerColorPicker}
+              title="Change timer color"
+            ></div>
+            <input
+              ref={colorInputRef}
+              type="color"
+              value={timer.color}
+              onChange={handleColorChange}
+              className="sr-only" // Visually hide the input
+            />
 
             {state.breakTimer.isActive && state.breakTimer.completedTimerId === timer.id && (
               <span
