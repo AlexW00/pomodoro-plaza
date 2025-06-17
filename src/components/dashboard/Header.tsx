@@ -33,15 +33,16 @@ export function Header({ onAddTimerClick }: HeaderProps) {
   }, [state?.globalPauseDurationMinutes]);
 
   return (
-    <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 gap-4">
-      <div className="flex items-center">
-        <AlarmClockIcon className="h-8 w-8 mr-2 text-primary" />
-        <h1 className="text-2xl font-bold">Pomodoro Plaza</h1>
+    <header className="flex flex-row justify-between items-center py-4 gap-4">
+      <div className="flex items-center min-w-0 flex-shrink">
+        <AlarmClockIcon className="h-8 w-8 mr-2 text-primary flex-shrink-0" />
+        <h1 className="text-2xl font-bold truncate">Pomodoro Plaza</h1>
       </div>
       
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <div className="flex items-center gap-1">
-          <span className="text-sm text-muted-foreground">Pause (min):</span>
+      <div className="flex flex-row items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-1 whitespace-nowrap">
+          <span className="text-sm text-muted-foreground hidden sm:inline">Pause (min):</span>
+          <span className="text-sm text-muted-foreground sm:hidden">Break:</span>
           <Input
             ref={pauseInputRef}
             value={pauseValue}
@@ -54,7 +55,7 @@ export function Header({ onAddTimerClick }: HeaderProps) {
           />
         </div>
 
-        <Button variant="outline" size="sm" onClick={onAddTimerClick} className="flex items-center gap-1">
+        <Button variant="outline" size="sm" onClick={onAddTimerClick} className="flex items-center gap-1 whitespace-nowrap">
           <PlusIcon className="h-4 w-4" />
           <span className="hidden sm:inline">Add Timer</span>
         </Button>
