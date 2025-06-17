@@ -157,7 +157,6 @@ export function CalendarHeatmap({ completedTimers, className }: CalendarHeatmapP
   const monthsToShow = getMonthsToShow(screenWidth);
   const dayData = createDayData(monthsToShow);
   const weeks = groupIntoWeeks(dayData);
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 
   return (
