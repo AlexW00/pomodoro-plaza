@@ -1,5 +1,5 @@
 import { toast } from '@/hooks/use-toast';
-import { TimerData, TimerState } from '@/types/timer';
+import { TimerData, TimerState, CompletedTimer } from '@/types/timer';
 import { generateId } from '@/utils/commonUtils';
 import { getFormattedDate } from '@/utils/stateUtils';
 import {
@@ -33,6 +33,7 @@ const defaultState: TimerState = {
   },
   lastResetDay: getFormattedDate(new Date()),
   globalPauseDurationMinutes: 5,
+  completedTimers: [],
 };
 
 interface TimerContextType {
@@ -125,11 +126,20 @@ export function TimerProvider({ children }: { children: ReactNode }) {
           // Timer completed
           if (newTimeRemaining <= 0) {
             const completedTimerId = prev.activeTimer.id;
+            const completedTimer = prev.timers.find(t => t.id === completedTimerId);
             const updatedTimers = prev.timers.map(timer => 
               timer.id === completedTimerId 
                 ? { ...timer, usedToday: timer.usedToday + 1 }
                 : timer
             );
+            
+            // Create completed timer record
+            const completedTimerRecord: CompletedTimer = {
+              timerId: completedTimerId,
+              timerTitle: completedTimer?.title || 'Unknown Timer',
+              completedAt: new Date().toISOString(),
+              durationMinutes: completedTimer?.durationMinutes || 0
+            };
             
             // Start break timer
             toast({
@@ -140,7 +150,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
             // Send push notification
             if ("Notification" in window && Notification.permission === "granted") {
               new Notification("Pomodoro Plaza", {
-                body: `Timer "${prev.timers.find(t => t.id === completedTimerId)?.title}" completed! Time for a break.`,
+                body: `Timer "${completedTimer?.title}" completed! Time for a break.`,
                 icon: "/favicon.png" // You might want to add a relevant icon
               });
             }
@@ -149,6 +159,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
               ...prev,
               timers: updatedTimers,
               activeTimer: null,
+              completedTimers: [...prev.completedTimers, completedTimerRecord],
               breakTimer: {
                 isActive: true,
                 timeRemaining: prev.globalPauseDurationMinutes * 60,

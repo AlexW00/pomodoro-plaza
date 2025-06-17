@@ -21,10 +21,18 @@ export interface TimerBreak {
 	completedTimerId: string | null;
 }
 
+export interface CompletedTimer {
+	timerId: string;
+	timerTitle: string;
+	completedAt: string; // ISO date string
+	durationMinutes: number;
+}
+
 export interface TimerState {
 	timers: TimerData[];
 	activeTimer: ActiveTimer | null;
 	breakTimer: TimerBreak;
 	lastResetDay: string;
 	globalPauseDurationMinutes: number;
+	completedTimers: CompletedTimer[];
 }

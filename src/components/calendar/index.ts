@@ -1,0 +1,1 @@
+export { CalendarHeatmap } from './CalendarHeatmap';

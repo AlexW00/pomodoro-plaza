@@ -1,6 +1,7 @@
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useTimerContext } from '@/contexts/TimerContext';
 import { useState } from 'react';
+import { CalendarHeatmap } from '../calendar';
 import { TimerBreak } from '../timer/TimerBreak';
 import { TimerForm } from '../timer/TimerForm';
 import { Header } from './Header';
@@ -41,6 +42,9 @@ export function Dashboard() {
         ) : (
           <>
             <TimerGrid />
+            <div className="mt-12">
+              <CalendarHeatmap completedTimers={state.completedTimers} />
+            </div>
           </>
         )}
       </div>
