@@ -1,5 +1,6 @@
 ### Pomodoro Plaza
 
-https://github.com/user-attachments/assets/782e94e8-1794-4e54-b9e2-fa8d52d01308
+Pomodoro app, which supports multiple timers & a heatmap.
 
-Vibe coded pomodoro app that supports multiple timers.
+![image](https://github.com/user-attachments/assets/73f1eda2-63d1-4200-8a72-ff8bf081c64e)
+
